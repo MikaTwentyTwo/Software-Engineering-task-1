@@ -21,6 +21,14 @@ spec:
       app: {{ .Values.service }}
   template:
     metadata:
+      annotations:
+        proxy.istio.io/config: |
+          proxyStatsMatcher:
+            inclusionRegexps:
+              - ".*outlier_detection.*"
+              - ".*upstream_rq_retry.*"
+              - ".*upstream_rq_pending_overflow.*"
+              - ".*upstream_cx_overflow.*"
       labels:
         app: {{ .Values.service }}
         sidecar.istio.io/inject: "true"
