@@ -1,0 +1,8 @@
+---
+strimzi_version: "1.2.0"
+kafka_namespace: campus
+kafka_cluster_name: campus-kafka
+kafka_version: "4.3.1"
+kafka_storage_size: 5Gi
+kafka_memory_request: 768Mi
+kafka_memory_limit: 1536Mi

@@ -1,0 +1,51 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: {{ kafka_namespace }}
+  labels:
+    strimzi.io/cluster: {{ kafka_cluster_name }}
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  resources:
+    requests:
+      cpu: "250m"
+      memory: {{ kafka_memory_request }}
+    limits:
+      memory: {{ kafka_memory_limit }}
+  jvmOptions:
+    "-Xms": "512m"
+    "-Xmx": "512m"
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: {{ kafka_storage_size }}
+        deleteClaim: false
+        kraftMetadata: shared
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: {{ kafka_cluster_name }}
+  namespace: {{ kafka_namespace }}
+spec:
+  kafka:
+    version: "{{ kafka_version }}"
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+  entityOperator:
+    topicOperator: {}

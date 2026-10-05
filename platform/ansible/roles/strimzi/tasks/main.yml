@@ -1,0 +1,60 @@
+---
+- name: Download pinned Strimzi operator manifest
+  ansible.builtin.uri:
+    url: "https://github.com/strimzi/strimzi-kafka-operator/releases/download/{{ strimzi_version }}/strimzi-cluster-operator-{{ strimzi_version }}.yaml"
+    return_content: true
+    timeout: 120
+  register: strimzi_manifest
+
+- name: Install Strimzi operator and CRDs
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ kafka_namespace }}"
+    apply: true
+    server_side_apply:
+      field_manager: campus-ansible
+    definition: "{{ strimzi_manifest.content | replace('namespace: myproject', 'namespace: ' ~ kafka_namespace) | from_yaml_all | list }}"
+
+- name: Wait for Kafka CRDs
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: "{{ item }}"
+    wait: true
+    wait_condition:
+      type: Established
+      status: "True"
+    wait_timeout: 120
+  loop:
+    - kafkas.kafka.strimzi.io
+    - kafkanodepools.kafka.strimzi.io
+
+- name: Wait for Strimzi operator
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ kafka_namespace }}"
+    name: strimzi-cluster-operator
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 300
+
+- name: Deploy single-node Kafka
+  kubernetes.core.k8s:
+    state: present
+    apply: true
+    definition: "{{ lookup('ansible.builtin.template', 'kafka.yaml.j2') | from_yaml_all | list }}"
+
+- name: Wait for Kafka readiness
+  kubernetes.core.k8s_info:
+    api_version: kafka.strimzi.io/v1
+    kind: Kafka
+    namespace: "{{ kafka_namespace }}"
+    name: "{{ kafka_cluster_name }}"
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_timeout: 600
