@@ -1,3 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ kafka_cluster_name }}-metrics
+  namespace: {{ kafka_namespace }}
+data:
+  kafka-metrics-config.yml: |
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    rules:
+      - pattern: 'kafka.network<type=RequestMetrics, name=(TotalTimeMs|RequestQueueTimeMs), request=([^,>]+)(?:, .*)?><>Mean'
+        name: kafka_request_duration_seconds
+        type: GAUGE
+        valueFactor: 0.001
+        labels:
+          phase: "$1"
+          request: "$2"
+---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
@@ -36,6 +54,12 @@ metadata:
 spec:
   kafka:
     version: "{{ kafka_version }}"
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: {{ kafka_cluster_name }}-metrics
+          key: kafka-metrics-config.yml
     listeners:
       - name: plain
         port: 9092
