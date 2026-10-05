@@ -28,6 +28,19 @@ spec:
             memory: 128Mi
           limits:
             memory: 384Mi
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: grafana
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: grafana
+          periodSeconds: 10
+          timeoutSeconds: 5
         datasources:
           datasources.yaml:
             apiVersion: 1
