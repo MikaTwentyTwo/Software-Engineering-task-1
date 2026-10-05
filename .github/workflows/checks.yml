@@ -1,0 +1,39 @@
+name: Checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - run: python -m compileall -q app scripts tests
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate ephemeral local credentials
+        run: |
+          python - <<'PY'
+          import secrets
+          from pathlib import Path
+          keys = ['POSTGRES_PASSWORD', 'TOKEN_SECRET', 'ADMIN_PASSWORD', 'STUDENT_PASSWORD']
+          Path('.env').write_text('\n'.join(k+'='+secrets.token_hex(24) for k in keys)+'\n')
+          PY
+      - run: docker compose config --quiet
+      - run: docker compose up --build -d
+      - run: python scripts/demo.py
+      - name: Diagnostics
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Stop test stack
+        if: always()
+        run: docker compose down -v
