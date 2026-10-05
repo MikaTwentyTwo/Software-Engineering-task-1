@@ -1,0 +1,9 @@
+credentialsSecret: campus-credentials
+postgres:
+  image: postgres:16.8-alpine
+  storage: 5Gi
+valkey:
+  image: valkey/valkey:8.0.2-alpine
+mongo:
+  image: mongo:7.0.18
+  storage: 5Gi
