@@ -1,0 +1,32 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campus-istio-gateway
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://blob.istio.io/istio-release/charts
+    chart: gateway
+    targetRevision: 1.31.1
+    helm:
+      releaseName: campus-gateway
+      values: |
+        replicaCount: 2
+        autoscaling:
+          enabled: false
+        service:
+          type: NodePort
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
