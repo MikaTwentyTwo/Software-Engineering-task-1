@@ -25,8 +25,12 @@ def call(path, method='GET', data=None, token=None, key=None):
         with urlopen(req,timeout=5) as response:
             return response.status,json.load(response)
     except HTTPError as exc:
-        return exc.code,json.loads(exc.read())
-
+        raw = exc.read().decode("utf-8", errors="replace")
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            payload = {"detail": raw}
+        return exc.code, payload
 
 def wait(check, description, timeout=120):
     deadline=time.monotonic()+timeout
