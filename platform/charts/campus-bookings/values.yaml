@@ -1,0 +1,13 @@
+service: bookings
+replicas: 2
+image:
+  repository: campusreserve
+  tag: dev-001
+  pullPolicy: IfNotPresent
+credentialsSecret: campus-credentials
+connections:
+  kafka: campus-kafka-kafka-bootstrap:9092
+  redis: redis://valkey:6379
+  postgres: postgres:5432
+  mongoHot: mongodb://mongo-hot:27017
+  mongoCold: mongodb://mongo-cold:27017

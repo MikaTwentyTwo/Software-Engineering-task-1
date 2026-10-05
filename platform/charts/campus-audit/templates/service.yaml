@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service }}
+spec:
+  selector:
+    app: {{ .Values.service }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service }}
+    spec:
+      serviceAccountName: {{ .Values.service }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: SERVICE
+              value: {{ .Values.service | quote }}
+            - name: KAFKA_BOOTSTRAP
+              value: {{ .Values.connections.kafka | quote }}
+            - name: REDIS_URL
+              value: {{ .Values.connections.redis | quote }}
+            - name: TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentialsSecret }}
+                  key: TOKEN_SECRET
+{{ if ne .Values.service "audit" }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentialsSecret }}
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.service }}:$(POSTGRES_PASSWORD)@{{ .Values.connections.postgres }}/{{ .Values.service }}"
+{{ else }}
+            - name: MONGO_HOT
+              value: {{ .Values.connections.mongoHot | quote }}
+            - name: MONGO_COLD
+              value: {{ .Values.connections.mongoCold | quote }}
+{{ end }}
+{{ if eq .Values.service "users" }}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentialsSecret }}
+                  key: ADMIN_PASSWORD
+            - name: STUDENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentialsSecret }}
+                  key: STUDENT_PASSWORD
+{{ end }}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5

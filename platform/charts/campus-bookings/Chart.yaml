@@ -1,0 +1,5 @@
+apiVersion: v2
+name: campus-bookings
+description: CampusReserve bookings microservice
+type: application
+version: 0.1.0

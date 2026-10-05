@@ -1,0 +1,5 @@
+apiVersion: v2
+name: campus-audit
+description: CampusReserve audit microservice
+type: application
+version: 0.1.0

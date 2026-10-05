@@ -1,0 +1,20 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campus-notifications
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/MikaTwentyTwo/Software-Engineering-task-1.git
+    targetRevision: main
+    path: platform/charts/campus-notifications
+    helm:
+      releaseName: campus-notifications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: campus
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: campus-rooms
+description: CampusReserve rooms microservice
+type: application
+version: 0.1.0
