@@ -21,7 +21,6 @@
 
 ```bash
 cp .env.example .env
-# Замените четыре значения в .env. Для POSTGRES_PASSWORD используйте URL-safe символы.
 docker compose up --build -d
 python scripts/demo.py
 ```
@@ -34,10 +33,8 @@ Swagger: `/api/users/docs`, `/api/rooms/docs`, `/api/equipment/docs`, `/api/book
 python -m unittest discover -s tests -v
 docker compose logs -f bookings-a notifications audit
 docker compose down
-# down сохраняет данные; down -v удаляет их.
 ```
 
-## Границы прототипа
 
 Учётные записи `student` и `admin` создаются автоматически; пароли задаются пользователем. Есть роли, подписанные токены с часовой экспирацией и проверка владельца брони. Отдельная бронь относится к одному экземпляру оборудования либо одной аудитории. Совместная атомарная бронь нескольких ресурсов, регистрация пользователей, изменение ресурсов, расписание занятий, почта/SMS, напоминания, frontend и интеграция с вузовским SSO — следующий этап. Уведомления сейчас доступны через API как inbox.
 
