@@ -1,0 +1,85 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campus-alloy
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: alloy
+    targetRevision: 1.13.0
+    helm:
+      releaseName: campus-alloy
+      values: |
+        controller:
+          type: deployment
+          replicas: 1
+
+        configReloader:
+          enabled: false
+
+        alloy:
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          extraEnv:
+            - name: GOMEMLIMIT
+              value: 200MiB
+          configMap:
+            content: |
+              logging {
+                level = "info"
+              }
+
+              discovery.kubernetes "pods" {
+                role = "pod"
+                namespaces {
+                  names = ["campus", "istio-system"]
+                }
+              }
+
+              discovery.relabel "pod_logs" {
+                targets = discovery.kubernetes.pods.targets
+
+                rule {
+                  source_labels = ["__meta_kubernetes_namespace"]
+                  target_label  = "namespace"
+                }
+
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_name"]
+                  target_label  = "pod"
+                }
+
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_container_name"]
+                  target_label  = "container"
+                }
+
+                rule {
+                  target_label = "cluster"
+                  replacement  = "campus"
+                }
+              }
+
+              loki.source.kubernetes "pods" {
+                targets    = discovery.relabel.pod_logs.output
+                forward_to = [loki.write.campus.receiver]
+              }
+
+              loki.write "campus" {
+                endpoint {
+                  url = "http://campus-loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+                }
+              }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
