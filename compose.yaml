@@ -1,4 +1,12 @@
 services:
+  kafka-permissions:
+    image: apache/kafka:3.9.1
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R 1000:1000 /tmp/kraft-combined-logs"]
+    volumes:
+      - kafka-data:/tmp/kraft-combined-logs
+    restart: "no"
   postgres:
     image: postgres:16.8-alpine
     environment:
@@ -15,6 +23,9 @@ services:
       timeout: 3s
       retries: 20
   kafka:
+    depends_on:
+      kafka-permissions:
+        condition: service_completed_successfully
     image: apache/kafka:3.9.1
     environment:
       KAFKA_NODE_ID: 1
