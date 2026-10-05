@@ -44,7 +44,7 @@ metadata:
   labels:
     run: client
 spec:
-  restartPolicy: Never
+  restartPolicy: Always
   containers:
     - name: client
       image: busybox:1.37
@@ -58,7 +58,7 @@ metadata:
   labels:
     run: outsider
 spec:
-  restartPolicy: Never
+  restartPolicy: Always
   containers:
     - name: outsider
       image: busybox:1.37
