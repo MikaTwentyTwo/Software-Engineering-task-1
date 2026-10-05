@@ -27,6 +27,7 @@ spec:
           global:
             scrape_interval: 30s
             evaluation_interval: 30s
+
         alertmanager:
           enabled: true
           persistence:
@@ -38,6 +39,7 @@ spec:
               memory: 32Mi
             limits:
               memory: 128Mi
+
         kube-state-metrics:
           enabled: true
           resources:
@@ -46,6 +48,7 @@ spec:
               memory: 32Mi
             limits:
               memory: 128Mi
+
         prometheus-node-exporter:
           enabled: true
           resources:
@@ -54,8 +57,70 @@ spec:
               memory: 32Mi
             limits:
               memory: 128Mi
+
         prometheus-pushgateway:
           enabled: false
+
+        serverFiles:
+          alerting_rules.yml:
+            groups:
+              - name: campus-platform
+                rules:
+                  - alert: CampusWatchdog
+                    expr: vector(1)
+                    labels:
+                      severity: info
+                    annotations:
+                      summary: "Continuous alert pipeline check"
+                      description: "This alert is intentionally always active."
+
+                  - alert: CampusDeploymentUnavailable
+                    expr: |
+                      kube_deployment_status_replicas_available{namespace="campus"}
+                      < kube_deployment_spec_replicas{namespace="campus"}
+                    for: 2m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "Campus deployment has unavailable replicas"
+
+                  - alert: CampusMetricsTargetDown
+                    expr: |
+                      up{job=~"istio-proxies|kafka-exporter|kafka-broker|ratelimit"} == 0
+                    for: 1m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "Platform metrics target cannot be scraped"
+
+                  - alert: CampusKafkaConsumerLag
+                    expr: |
+                      sum by (consumergroup) (
+                        kafka_consumergroup_lag{
+                          job="kafka-exporter",
+                          topic="campus.events.v1"
+                        }
+                      ) > 10
+                    for: 2m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "Kafka consumer group is falling behind"
+
+                  - alert: CampusRateLimitExceeded
+                    expr: |
+                      sum(increase(
+                        ratelimit_service_rate_limit_over_limit{
+                          job="ratelimit",
+                          domain="campus-api"
+                        }[5m]
+                      )) > 20
+                    for: 30s
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "More than 20 requests blocked in five minutes"
+
         extraScrapeConfigs: |
           - job_name: istio-proxies
             metrics_path: /stats/prometheus
@@ -91,6 +156,7 @@ spec:
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]
                 target_label: pod
+
           - job_name: kafka-broker
             metrics_path: /metrics
             kubernetes_sd_configs:
@@ -112,6 +178,7 @@ spec:
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]
                 target_label: pod
+
           - job_name: ratelimit
             metrics_path: /metrics
             static_configs:
