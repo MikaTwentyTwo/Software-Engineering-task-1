@@ -1,0 +1,21 @@
+﻿apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: rooms-resilience
+  namespace: campus
+spec:
+  host: rooms.campus.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 200
+        maxRequestsPerConnection: 100
+        maxRetries: 20
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 5s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 100

@@ -1,24 +1,21 @@
 ﻿apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: equipment-api
+  name: bookings-internal
   namespace: campus
 spec:
   hosts:
-    - "*"
+    - bookings
+    - bookings.campus.svc.cluster.local
   gateways:
-    - campus-api
+    - mesh
   http:
     - match:
-        - uri:
-            prefix: /api/equipment/
-          method:
+        - method:
             exact: GET
-      rewrite:
-        uri: /
       route:
         - destination:
-            host: equipment.campus.svc.cluster.local
+            host: bookings.campus.svc.cluster.local
             port:
               number: 8000
       retries:
@@ -26,15 +23,9 @@ spec:
         perTryTimeout: 3s
         retryOn: connect-failure,reset,refused-stream,503
       timeout: 10s
-    - match:
-        - uri:
-            prefix: /api/equipment/
-      rewrite:
-        uri: /
-      route:
+    - route:
         - destination:
-            host: equipment.campus.svc.cluster.local
+            host: bookings.campus.svc.cluster.local
             port:
               number: 8000
       timeout: 15s
-

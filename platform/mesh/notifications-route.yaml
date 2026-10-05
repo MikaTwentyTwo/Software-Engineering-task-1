@@ -12,6 +12,23 @@ spec:
     - match:
         - uri:
             prefix: /api/notifications/
+          method:
+            exact: GET
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: notifications.campus.svc.cluster.local
+            port:
+              number: 8000
+      retries:
+        attempts: 2
+        perTryTimeout: 3s
+        retryOn: connect-failure,reset,refused-stream,503
+      timeout: 10s
+    - match:
+        - uri:
+            prefix: /api/notifications/
       rewrite:
         uri: /
       route:
@@ -20,3 +37,4 @@ spec:
             port:
               number: 8000
       timeout: 15s
+
