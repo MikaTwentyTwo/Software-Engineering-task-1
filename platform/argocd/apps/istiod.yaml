@@ -1,0 +1,42 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campus-istiod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://blob.istio.io/istio-release/charts
+    chart: istiod
+    targetRevision: 1.31.1
+    helm:
+      releaseName: istiod
+      values: |
+        pilot:
+          autoscaleEnabled: false
+          replicaCount: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+        global:
+          proxy:
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+        meshConfig:
+          accessLogFile: /dev/stdout
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
