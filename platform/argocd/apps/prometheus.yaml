@@ -1,0 +1,81 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campus-prometheus
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus
+    targetRevision: 29.35.0
+    helm:
+      releaseName: campus-prometheus
+      values: |
+        server:
+          retention: 1d
+          retentionSize: 1GB
+          persistentVolume:
+            enabled: true
+            size: 3Gi
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          global:
+            scrape_interval: 30s
+            evaluation_interval: 30s
+        alertmanager:
+          enabled: true
+          persistence:
+            enabled: true
+            size: 1Gi
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        kube-state-metrics:
+          enabled: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        prometheus-node-exporter:
+          enabled: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        prometheus-pushgateway:
+          enabled: false
+        extraScrapeConfigs: |
+          - job_name: istio-proxies
+            metrics_path: /stats/prometheus
+            kubernetes_sd_configs:
+              - role: pod
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_container_name]
+                action: keep
+                regex: istio-proxy
+              - source_labels: [__meta_kubernetes_pod_container_port_name]
+                action: keep
+                regex: http-envoy-prom
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
