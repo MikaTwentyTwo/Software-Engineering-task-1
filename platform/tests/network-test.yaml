@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: network-test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: network-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27.5-alpine
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: network-test
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: network-test
+  labels:
+    run: client
+spec:
+  restartPolicy: Never
+  containers:
+    - name: client
+      image: busybox:1.37
+      command: ["sleep", "3600"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: outsider
+  namespace: network-test
+  labels:
+    run: outsider
+spec:
+  restartPolicy: Never
+  containers:
+    - name: outsider
+      image: busybox:1.37
+      command: ["sleep", "3600"]
