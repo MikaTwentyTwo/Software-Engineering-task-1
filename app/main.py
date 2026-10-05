@@ -228,3 +228,23 @@ if rt.SERVICE == 'audit':
     def archived(user=Depends(admin)):
         from app.archive import cold
         return list(cold.find({}, {'_id': 0}).sort('received_at', -1).limit(100))
+
+# Optional failure simulation for local platform acceptance tests.
+if rt.SERVICE == "bookings" and os.environ.get("ENABLE_FAULT_TESTS") == "1":
+    @app.middleware("http")
+    async def acceptance_fault(request, call_next):
+        import time
+        from pathlib import Path
+        from starlette.responses import JSONResponse
+
+        if request.url.path not in ("/health", "/ready"):
+            try:
+                deadline = float(Path("/tmp/campus-fault-until").read_text())
+            except (OSError, ValueError):
+                deadline = 0
+            if time.time() < deadline:
+                return JSONResponse(
+                    status_code=503,
+                    content={"detail": "Acceptance test: temporary service failure"}
+                )
+        return await call_next(request)

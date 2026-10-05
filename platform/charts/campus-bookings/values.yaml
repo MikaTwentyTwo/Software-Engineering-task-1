@@ -2,7 +2,7 @@ service: bookings
 replicas: 2
 image:
   repository: campusreserve
-  tag: dev-001
+  tag: dev-002
   pullPolicy: IfNotPresent
 credentialsSecret: campus-credentials
 connections:

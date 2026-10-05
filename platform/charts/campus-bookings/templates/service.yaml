@@ -53,6 +53,8 @@ spec:
             - name: http
               containerPort: 8000
           env:
+            - name: ENABLE_FAULT_TESTS
+              value: "1"
             - name: SERVICE
               value: {{ .Values.service | quote }}
             - name: KAFKA_BOOTSTRAP
