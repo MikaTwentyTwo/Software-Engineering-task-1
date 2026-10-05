@@ -1,4 +1,4 @@
-﻿apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: campus-grafana
@@ -61,57 +61,228 @@ spec:
                   "uid": "campus-services",
                   "title": "Campus — Services",
                   "schemaVersion": 39,
-                  "version": 2,
+                  "version": 3,
                   "refresh": "30s",
-                  "time": {"from": "now-30m", "to": "now"},
+                  "time": {
+                    "from": "now-30m",
+                    "to": "now"
+                  },
                   "panels": [
                     {
                       "id": 1,
                       "title": "Istio proxies available",
                       "type": "stat",
-                      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
-                      "datasource": {"type": "prometheus", "uid": "prometheus"},
-                      "targets": [{"refId": "A", "expr": "sum(up{job=\"istio-proxies\"})", "instant": true}],
-                      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+                      "gridPos": {
+                        "h": 6,
+                        "w": 6,
+                        "x": 0,
+                        "y": 0
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "sum(up{job=\"istio-proxies\"})",
+                          "instant": true
+                        }
+                      ],
+                      "options": {
+                        "reduceOptions": {
+                          "calcs": [
+                            "lastNotNull"
+                          ],
+                          "fields": "",
+                          "values": false
+                        }
+                      }
                     },
                     {
                       "id": 2,
                       "title": "Requests per second by service",
                       "type": "timeseries",
-                      "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0},
-                      "datasource": {"type": "prometheus", "uid": "prometheus"},
-                      "targets": [{"refId": "A", "expr": "sum by (destination_service_name) (rate(istio_requests_total{reporter=\"destination\"}[5m]))", "legendFormat": "{{destination_service_name}}"}],
-                      "fieldConfig": {"defaults": {"unit": "reqps", "min": 0}, "overrides": []}
+                      "gridPos": {
+                        "h": 8,
+                        "w": 18,
+                        "x": 6,
+                        "y": 0
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "sum by (destination_service_name) (rate(istio_requests_total{reporter=\"destination\"}[5m]))",
+                          "legendFormat": "{{destination_service_name}}"
+                        }
+                      ],
+                      "fieldConfig": {
+                        "defaults": {
+                          "unit": "reqps",
+                          "min": 0
+                        },
+                        "overrides": []
+                      }
                     },
                     {
                       "id": 3,
                       "title": "Kafka consumer lag",
                       "description": "Events not yet consumed, summed across partitions for each consumer group.",
                       "type": "timeseries",
-                      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
-                      "datasource": {"type": "prometheus", "uid": "prometheus"},
-                      "targets": [{"refId": "A", "expr": "sum by (consumergroup) (kafka_consumergroup_lag{job=\"kafka-exporter\",topic=\"campus.events.v1\"})", "legendFormat": "{{consumergroup}}"}],
-                      "fieldConfig": {"defaults": {"unit": "short", "min": 0, "decimals": 0}, "overrides": []}
+                      "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 8
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "sum by (consumergroup) (kafka_consumergroup_lag{job=\"kafka-exporter\",topic=\"campus.events.v1\"})",
+                          "legendFormat": "{{consumergroup}}"
+                        }
+                      ],
+                      "fieldConfig": {
+                        "defaults": {
+                          "unit": "short",
+                          "min": 0,
+                          "decimals": 0
+                        },
+                        "overrides": []
+                      }
                     },
                     {
                       "id": 4,
                       "title": "Kafka mean broker request time",
                       "description": "Broker JMX mean TotalTimeMs converted to seconds. Not end-to-end event latency.",
                       "type": "timeseries",
-                      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
-                      "datasource": {"type": "prometheus", "uid": "prometheus"},
-                      "targets": [{"refId": "A", "expr": "kafka_request_duration_seconds{job=\"kafka-broker\",phase=\"TotalTimeMs\",request=~\"Produce|Fetch|FetchConsumer|FetchFollower\"}", "legendFormat": "{{request}}"}],
-                      "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}
+                      "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 16
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "kafka_request_duration_seconds{job=\"kafka-broker\",phase=\"TotalTimeMs\",request=~\"Produce|Fetch|FetchConsumer|FetchFollower\"}",
+                          "legendFormat": "{{request}}"
+                        }
+                      ],
+                      "fieldConfig": {
+                        "defaults": {
+                          "unit": "s",
+                          "min": 0
+                        },
+                        "overrides": []
+                      }
                     },
                     {
                       "id": 5,
                       "title": "Kafka mean request queue wait",
                       "description": "Broker JMX mean RequestQueueTimeMs converted to seconds.",
                       "type": "timeseries",
-                      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
-                      "datasource": {"type": "prometheus", "uid": "prometheus"},
-                      "targets": [{"refId": "A", "expr": "kafka_request_duration_seconds{job=\"kafka-broker\",phase=\"RequestQueueTimeMs\",request=~\"Produce|Fetch|FetchConsumer|FetchFollower\"}", "legendFormat": "{{request}}"}],
-                      "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}
+                      "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 16
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "kafka_request_duration_seconds{job=\"kafka-broker\",phase=\"RequestQueueTimeMs\",request=~\"Produce|Fetch|FetchConsumer|FetchFollower\"}",
+                          "legendFormat": "{{request}}"
+                        }
+                      ],
+                      "fieldConfig": {
+                        "defaults": {
+                          "unit": "s",
+                          "min": 0
+                        },
+                        "overrides": []
+                      }
+                    },
+                    {
+                      "id": 6,
+                      "title": "Rate limiter blocked requests since restart",
+                      "type": "stat",
+                      "gridPos": {
+                        "h": 6,
+                        "w": 6,
+                        "x": 0,
+                        "y": 24
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "sum(ratelimit_service_rate_limit_over_limit{job=\"ratelimit\",domain=\"campus-api\"})",
+                          "instant": true
+                        }
+                      ],
+                      "options": {
+                        "reduceOptions": {
+                          "calcs": [
+                            "lastNotNull"
+                          ],
+                          "fields": "",
+                          "values": false
+                        }
+                      }
+                    },
+                    {
+                      "id": 7,
+                      "title": "Rate limiter allowed and blocked requests per second",
+                      "type": "timeseries",
+                      "gridPos": {
+                        "h": 8,
+                        "w": 18,
+                        "x": 6,
+                        "y": 24
+                      },
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                      },
+                      "targets": [
+                        {
+                          "refId": "A",
+                          "expr": "sum(rate(ratelimit_service_rate_limit_within_limit{job=\"ratelimit\",domain=\"campus-api\"}[5m]))",
+                          "legendFormat": "Allowed"
+                        },
+                        {
+                          "refId": "B",
+                          "expr": "sum(rate(ratelimit_service_rate_limit_over_limit{job=\"ratelimit\",domain=\"campus-api\"}[5m]))",
+                          "legendFormat": "Blocked"
+                        }
+                      ],
+                      "fieldConfig": {
+                        "defaults": {
+                          "unit": "reqps",
+                          "min": 0
+                        },
+                        "overrides": []
+                      }
                     }
                   ]
                 }
