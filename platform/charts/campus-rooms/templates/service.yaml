@@ -23,6 +23,7 @@ spec:
     metadata:
       labels:
         app: {{ .Values.service }}
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Values.service }}
       automountServiceAccountToken: false
