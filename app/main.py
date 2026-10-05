@@ -180,7 +180,7 @@ if rt.SERVICE == 'bookings':
                     raise HTTPException(422, 'Booking must start in future')
                 if not c.execute('SELECT id FROM users WHERE id=%s AND active', (user['sub'],)).fetchone():
                     raise HTTPException(409, 'User projection not ready; retry shortly')
-                if not c.execute('SELECT id FROM resources WHERE id=%s AND active', (body.resource_id,)).fetchone():
+                if not c.execute('SELECT id FROM resources WHERE id=%s AND active FOR UPDATE', (body.resource_id,)).fetchone():
                     raise HTTPException(409, 'Resource unknown or projection not ready')
                 bid = str(uuid.uuid4())
                 row = c.execute("INSERT INTO bookings VALUES (%s,%s,%s,%s,%s,'confirmed',%s,%s) RETURNING *",
