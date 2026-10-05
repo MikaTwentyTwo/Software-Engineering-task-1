@@ -1,0 +1,44 @@
+﻿apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: campus-global-ratelimit
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: campus-gateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.ratelimit
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
+            domain: campus-api
+            timeout: 0.25s
+            failure_mode_deny: true
+            rate_limit_service:
+              transport_api_version: V3
+              grpc_service:
+                envoy_grpc:
+                  cluster_name: outbound|8081||ratelimit.campus.svc.cluster.local
+                  authority: ratelimit.campus.svc.cluster.local
+    - applyTo: VIRTUAL_HOST
+      match:
+        context: GATEWAY
+      patch:
+        operation: MERGE
+        value:
+          rate_limits:
+            - actions:
+                - generic_key:
+                    descriptor_value: campus-global
