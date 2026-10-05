@@ -1,0 +1,12 @@
+﻿apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: campus.events.v1
+  namespace: campus
+  labels:
+    strimzi.io/cluster: campus-kafka
+spec:
+  partitions: 6
+  replicas: 1
+  config:
+    retention.ms: 604800000
