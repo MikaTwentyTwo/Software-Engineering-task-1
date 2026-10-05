@@ -1,0 +1,22 @@
+﻿apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: equipment-api
+  namespace: campus
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - campus-api
+  http:
+    - match:
+        - uri:
+            prefix: /api/equipment/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: equipment.campus.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 15s

@@ -1,0 +1,22 @@
+﻿apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: rooms-api
+  namespace: campus
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - campus-api
+  http:
+    - match:
+        - uri:
+            prefix: /api/rooms/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: rooms.campus.svc.cluster.local
+            port:
+              number: 8000
+      timeout: 15s

@@ -1,0 +1,15 @@
+﻿apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: campus-api
+  namespace: campus
+spec:
+  selector:
+    istio: campus-gateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
