@@ -74,6 +74,9 @@ spec:
     - name: grpc
       port: 8081
       targetPort: 8081
+    - name: metrics
+      port: 9090
+      targetPort: metrics
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -95,7 +98,10 @@ spec:
         - name: ratelimit
           image: envoyproxy/ratelimit:cfdbd87a
           ports:
-            - containerPort: 8081
+            - name: grpc
+              containerPort: 8081
+            - name: metrics
+              containerPort: 9090
           env:
             - name: REDIS_SOCKET_TYPE
               value: tcp
@@ -113,6 +119,12 @@ spec:
               value: FILE
             - name: USE_STATSD
               value: "false"
+            - name: USE_PROMETHEUS
+              value: "true"
+            - name: PROMETHEUS_ADDR
+              value: "0.0.0.0:9090"
+            - name: PROMETHEUS_PATH
+              value: /metrics
             - name: LOG_LEVEL
               value: info
           resources:
