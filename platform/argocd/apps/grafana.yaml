@@ -41,6 +41,50 @@ spec:
             port: grafana
           periodSeconds: 10
           timeoutSeconds: 5
+        dashboardProviders:
+          dashboardproviders.yaml:
+            apiVersion: 1
+            providers:
+              - name: campus
+                orgId: 1
+                folder: Campus
+                type: file
+                disableDeletion: true
+                editable: false
+                options:
+                  path: /var/lib/grafana/dashboards/campus
+        dashboards:
+          campus:
+            service-overview:
+              json: |
+                {
+                  "uid": "campus-services",
+                  "title": "Campus — Services",
+                  "schemaVersion": 39,
+                  "version": 1,
+                  "refresh": "30s",
+                  "time": {"from": "now-30m", "to": "now"},
+                  "panels": [
+                    {
+                      "id": 1,
+                      "title": "Istio proxies available",
+                      "type": "stat",
+                      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+                      "datasource": {"type": "prometheus", "uid": "prometheus"},
+                      "targets": [{"refId": "A", "expr": "sum(up{job=\"istio-proxies\"})", "instant": true}],
+                      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+                    },
+                    {
+                      "id": 2,
+                      "title": "Requests per second by service",
+                      "type": "timeseries",
+                      "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0},
+                      "datasource": {"type": "prometheus", "uid": "prometheus"},
+                      "targets": [{"refId": "A", "expr": "sum by (destination_service_name) (rate(istio_requests_total{reporter=\"destination\"}[5m]))", "legendFormat": "{{destination_service_name}}"}],
+                      "fieldConfig": {"defaults": {"unit": "reqps", "min": 0}, "overrides": []}
+                    }
+                  ]
+                }
         datasources:
           datasources.yaml:
             apiVersion: 1
