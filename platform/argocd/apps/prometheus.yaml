@@ -72,6 +72,25 @@ spec:
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]
                 target_label: pod
+
+          - job_name: kafka-exporter
+            metrics_path: /metrics
+            kubernetes_sd_configs:
+              - role: pod
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_namespace]
+                action: keep
+                regex: campus
+              - source_labels: [__meta_kubernetes_pod_label_strimzi_io_name]
+                action: keep
+                regex: campus-kafka-kafka-exporter
+              - source_labels: [__meta_kubernetes_pod_container_port_number]
+                action: keep
+                regex: "9404"
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
