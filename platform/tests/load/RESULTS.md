@@ -64,3 +64,14 @@ GET /api/bookings/ready вернул HTTP 200, scope=storage.
   connection pool отдельно не проверено.
 - HTTP-трассы Istio доступны в Tempo/Grafana.
   Распространение trace context через Kafka не проверено.
+## Проверка после CI/CD
+
+GitHub Actions Platform Build #3 завершился успешно:
+Kaniko собрал образ, отправил его в локальный Registry,
+обновил image repository/tag шести Helm-чартов коммитом
+в main и дождался обновления Deployment через ArgoCD.
+
+После деплоя scripts/demo.py через Istio Gateway вернул PASS:
+auth, roles, projections, idempotency, conflict, notification,
+audit, cancellation, concurrency, ownership.
+Пароли для проверки загружены из campus-credentials.
