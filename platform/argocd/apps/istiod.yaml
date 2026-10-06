@@ -31,6 +31,12 @@ spec:
                 memory: 256Mi
         meshConfig:
           accessLogFile: /dev/stdout
+          enableTracing: true
+          extensionProviders:
+            - name: campus-tempo
+              opentelemetry:
+                service: campus-tempo.monitoring.svc.cluster.local
+                port: 4317
   destination:
     server: https://kubernetes.default.svc
     namespace: istio-system

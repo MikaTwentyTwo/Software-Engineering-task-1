@@ -1,0 +1,10 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: campus-tracing
+  namespace: istio-system
+spec:
+  tracing:
+    - providers:
+        - name: campus-tempo
+      randomSamplingPercentage: 100
