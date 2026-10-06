@@ -1,0 +1,73 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campus-tempo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://grafana-community.github.io/helm-charts
+    chart: tempo
+    targetRevision: 3.1.0
+    helm:
+      releaseName: campus-tempo
+      values: |
+        replicas: 1
+        tempo:
+          reportingEnabled: false
+          retention: 24h
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          extraEnv:
+            - name: GOMEMLIMIT
+              value: 400MiB
+          metricsGenerator:
+            enabled: false
+          querier:
+            max_concurrent_queries: 2
+          queryFrontend:
+            search:
+              concurrent_jobs: 4
+          receivers:
+            jaeger: null
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: "0.0.0.0:4317"
+                http:
+                  endpoint: "0.0.0.0:4318"
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 3200
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3200
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+        persistence:
+          enabled: true
+          size: 3Gi
+          storageClassName: standard
+        serviceAccount:
+          automountServiceAccountToken: false
+        tempoQuery:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
