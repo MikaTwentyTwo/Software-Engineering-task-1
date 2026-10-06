@@ -1,0 +1,61 @@
+services:
+  lb1:
+    image: campus-ha:dev-001
+    container_name: campus-ha-lb1
+    restart: unless-stopped
+    tmpfs:
+      - /run
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      LB_NAME: campus-lb1
+      LOCAL_IP: 192.168.49.10
+      PEER_IP: 192.168.49.11
+      PRIORITY: "150"
+    networks:
+      campus:
+        ipv4_address: 192.168.49.10
+    mem_limit: 128m
+    cpus: 0.5
+
+  lb2:
+    image: campus-ha:dev-001
+    container_name: campus-ha-lb2
+    restart: unless-stopped
+    tmpfs:
+      - /run
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      LB_NAME: campus-lb2
+      LOCAL_IP: 192.168.49.11
+      PEER_IP: 192.168.49.10
+      PRIORITY: "100"
+    networks:
+      campus:
+        ipv4_address: 192.168.49.11
+    mem_limit: 128m
+    cpus: 0.5
+
+  access:
+    image: campus-ha:dev-001
+    container_name: campus-ha-access
+    restart: unless-stopped
+    entrypoint: ["socat"]
+    command:
+      - "TCP-LISTEN:8080,fork,reuseaddr"
+      - "TCP:192.168.49.250:8080,connect-timeout=5"
+    ports:
+      - "127.0.0.1:18080:8080"
+    networks:
+      campus:
+        ipv4_address: 192.168.49.12
+    mem_limit: 64m
+    cpus: 0.25
+
+networks:
+  campus:
+    external: true
+    name: campus
