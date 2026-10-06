@@ -1,0 +1,97 @@
+name: Platform Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: campus-platform-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Windows, X64, campus]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      - name: Locate local tools
+        run: |
+          $git = Get-ChildItem "$env:LOCALAPPDATA\GitHubDesktop\app-*\resources\app\git\cmd\git.exe" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (!$git) { throw "Git not found" }
+          Split-Path $git.FullName | Out-File $env:GITHUB_PATH -Encoding utf8 -Append
+          "$env:USERPROFILE\k8s-tools" | Out-File $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - uses: actions/checkout@v4
+
+      - name: Check cluster and prepare image tag
+        run: |
+          minikube.exe --profile=campus kubectl -- get nodes
+          if ($LASTEXITCODE -ne 0) { throw "Cluster unavailable" }
+
+          $campusIP = (minikube.exe ip --profile=campus).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Cannot determine node IP" }
+
+          $tag = "ci-$($env:GITHUB_SHA.Substring(0,12))-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          "REGISTRY_ADDRESS=${campusIP}:32000" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "IMAGE_TAG=$tag" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Prepare build context
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "campus-context.tar.gz"
+          tar.exe -czf $archive Dockerfile requirements.txt app
+          if ($LASTEXITCODE -ne 0) { throw "Cannot create context archive" }
+          if ((Get-Item $archive).Length -ge 900000) {
+            throw "Context too large for the ConfigMap build method"
+          }
+
+          minikube.exe --profile=campus kubectl -- create configmap kaniko-context -n campus "--from-file=context.tar.gz=$archive" --dry-run=client -o yaml |
+            minikube.exe --profile=campus kubectl -- apply -f -
+          if ($LASTEXITCODE -ne 0) { throw "Cannot upload build context" }
+
+      - name: Start Kaniko build
+        run: |
+          $job = Get-Content platform\ci\kaniko-smoke.yaml -Raw
+          $job = $job.Replace("name: kaniko-smoke", "name: kaniko-ci")
+          $job = $job.Replace(
+            "--destination=192.168.49.2:32000/campusreserve:ci-smoke-001",
+            "--destination=$env:REGISTRY_ADDRESS/campusreserve:$env:IMAGE_TAG"
+          )
+          $job = $job.Replace(
+            "--insecure-registry=192.168.49.2:32000",
+            "--insecure-registry=$env:REGISTRY_ADDRESS"
+          )
+          if (!$job.Contains("--destination=$env:REGISTRY_ADDRESS/campusreserve:$env:IMAGE_TAG")) {
+            throw "Build template does not contain expected destination"
+          }
+
+          minikube.exe --profile=campus kubectl -- delete job kaniko-ci -n campus --ignore-not-found=true
+          if ($LASTEXITCODE -ne 0) { throw "Cannot remove previous build job" }
+
+          $job | minikube.exe --profile=campus kubectl -- apply -f -
+          if ($LASTEXITCODE -ne 0) { throw "Cannot create build job" }
+
+      - name: Wait for build and push
+        run: |
+          minikube.exe --profile=campus kubectl -- wait -n campus job/kaniko-ci --for=condition=complete --timeout=900s
+          $buildExit = $LASTEXITCODE
+
+          minikube.exe --profile=campus kubectl -- logs -n campus job/kaniko-ci
+          if ($buildExit -ne 0) { throw "Kaniko build failed or timed out" }
+          if ($LASTEXITCODE -ne 0) { throw "Cannot read build log" }
+
+          "Built image: $env:REGISTRY_ADDRESS/campusreserve:$env:IMAGE_TAG" |
+            Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
+      - name: Diagnostics
+        if: failure()
+        run: |
+          minikube.exe --profile=campus kubectl -- get pods -n campus -l job-name=kaniko-ci
+          minikube.exe --profile=campus kubectl -- describe job kaniko-ci -n campus
