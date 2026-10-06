@@ -303,6 +303,12 @@ spec:
                 access: proxy
                 url: http://campus-loki.monitoring.svc.cluster.local:3100
                 editable: false
+              - name: Tempo
+                uid: tempo
+                type: tempo
+                access: proxy
+                url: http://campus-tempo.monitoring.svc.cluster.local:3200
+                editable: false
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
