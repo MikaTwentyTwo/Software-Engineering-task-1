@@ -33,7 +33,12 @@ spec:
             search:
               concurrent_jobs: 4
           receivers:
-            jaeger: null
+            jaeger:
+              protocols:
+                grpc: null
+                thrift_binary: null
+                thrift_compact: null
+                thrift_http: null
             otlp:
               protocols:
                 grpc:
