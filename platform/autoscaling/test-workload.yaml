@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscale-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: autoscale-test
+  template:
+    metadata:
+      labels:
+        app: autoscale-test
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: autoscale-test
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: test
+          image: registry.k8s.io/pause:3.10.2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 32Mi
+            limits:
+              memory: 64Mi

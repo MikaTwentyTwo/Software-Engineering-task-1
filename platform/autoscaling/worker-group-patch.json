@@ -1,0 +1,20 @@
+{
+  "spec": {
+    "topology": {
+      "workers": {
+        "machineDeployments": [
+          {
+            "class": "default-worker",
+            "name": "md-0",
+            "metadata": {
+              "annotations": {
+                "cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size": "1",
+                "cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size": "2"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

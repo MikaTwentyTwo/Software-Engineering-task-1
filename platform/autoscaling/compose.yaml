@@ -1,0 +1,30 @@
+services:
+  autoscaler:
+    image: registry.k8s.io/autoscaling/cluster-autoscaler:v1.36.1
+    container_name: campus-cluster-autoscaler
+    entrypoint: ["/cluster-autoscaler"]
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    volumes:
+      - "${USERPROFILE}/k8s-tools/autoscaler-management.yaml:/config/management.yaml:ro"
+      - "${USERPROFILE}/k8s-tools/autoscaler-workload.yaml:/config/workload.yaml:ro"
+    command:
+      - --cloud-provider=clusterapi
+      - --cloud-config=/config/management.yaml
+      - --kubeconfig=/config/workload.yaml
+      - --node-group-auto-discovery=clusterapi:namespace=default,clusterName=campus-autoscale
+      - --leader-elect=false
+      - --scan-interval=10s
+      - --scale-down-delay-after-add=2m
+      - --scale-down-unneeded-time=2m
+      - --skip-nodes-with-system-pods=false
+      - --skip-nodes-with-local-storage=false
+      - --v=4
+    networks:
+      - kind
+
+networks:
+  kind:
+    external: true
+    name: kind
