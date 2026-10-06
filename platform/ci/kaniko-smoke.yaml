@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-smoke
+  namespace: campus
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: kaniko-smoke
+        sidecar.istio.io/inject: "false"
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: kaniko
+          image: ghcr.io/osscontainertools/kaniko:v1.28.5
+          args:
+            - --context=tar:///build-context/context.tar.gz
+            - --dockerfile=Dockerfile
+            - --destination=192.168.49.2:32000/campusreserve:ci-smoke-001
+            - --insecure-registry=192.168.49.2:32000
+            - --cache=false
+            - --digest-file=/dev/termination-log
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: context
+              mountPath: /build-context
+              readOnly: true
+      volumes:
+        - name: context
+          configMap:
+            name: kaniko-context
