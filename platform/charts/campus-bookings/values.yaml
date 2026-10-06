@@ -1,8 +1,8 @@
 service: bookings
 replicas: 2
 image:
-  repository: campusreserve
-  tag: dev-002
+  repository: 192.168.49.2:32000/campusreserve
+  tag: ci-d936fcd8719e-37399724035-1
   pullPolicy: IfNotPresent
 credentialsSecret: campus-credentials
 connections:
