@@ -297,6 +297,12 @@ spec:
                 url: http://campus-prometheus-server.monitoring.svc.cluster.local
                 isDefault: true
                 editable: false
+              - name: Loki
+                uid: loki
+                type: loki
+                access: proxy
+                url: http://campus-loki.monitoring.svc.cluster.local:3100
+                editable: false
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
